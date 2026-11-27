@@ -1,0 +1,17 @@
+<Project Sdk="WixToolset.Sdk/5.0.2">
+
+  <!-- Gera o instalador BandejaImpressoras.msi (Windows Installer). Compila o programa junto. -->
+  <PropertyGroup>
+    <Version Condition="'$(Version)' == ''">1.0.0</Version>
+    <OutputName>BandejaImpressoras-$(Version)</OutputName>
+    <DefineConstants>Versao=$(Version)</DefineConstants>
+    <!-- ICE91: aviso esperado em instalação por usuário. -->
+    <SuppressIces>ICE91</SuppressIces>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\src\BandejaImpressoras\BandejaImpressoras.csproj" />
+    <PackageReference Include="WixToolset.Util.wixext" Version="5.0.2" />
+  </ItemGroup>
+
+</Project>

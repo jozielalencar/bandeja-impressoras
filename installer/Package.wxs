@@ -1,0 +1,54 @@
+<!--
+  Instalador por usuário (não precisa de administrador):
+    - programa em %LOCALAPPDATA%\Programs\BandejaImpressoras
+    - atalho no Menu Iniciar
+    - "Iniciar com o Windows" ativado (HKCU\...\Run; pode ser desligado pelo menu da bandeja)
+    - aparece em Configurações > Aplicativos, de onde é desinstalado
+-->
+<Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
+     xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
+
+  <Package Name="Bandeja de Impressoras"
+           Manufacturer="Bandeja de Impressoras"
+           Version="$(Versao)"
+           UpgradeCode="1722CEA3-001F-4E6F-8265-6C5EC1B5B242"
+           Scope="perUser"
+           Language="1046"
+           Codepage="1252">
+
+    <MajorUpgrade DowngradeErrorMessage="Uma versão mais nova da Bandeja de Impressoras já está instalada." />
+    <MediaTemplate EmbedCab="yes" />
+
+    <Icon Id="app.ico" SourceFile="..\src\BandejaImpressoras\app.ico" />
+    <Property Id="ARPPRODUCTICON" Value="app.ico" />
+    <Property Id="ARPNOMODIFY" Value="1" />
+    <Property Id="ARPNOREPAIR" Value="1" />
+
+    <StandardDirectory Id="LocalAppDataFolder">
+      <Directory Id="ProgramsDir" Name="Programs">
+        <Directory Id="INSTALLFOLDER" Name="BandejaImpressoras" />
+      </Directory>
+    </StandardDirectory>
+
+    <Component Id="Programa" Directory="INSTALLFOLDER" Guid="1F1837A6-7349-A866-3529-3A1D7ECF0206">
+      <File Id="ExeFile" Source="$(var.BandejaImpressoras.TargetPath)" KeyPath="no" />
+      <RegistryValue Root="HKCU" Key="Software\BandejaImpressoras" Name="Instalado" Type="integer" Value="1" KeyPath="yes" />
+      <Shortcut Id="Atalho" Directory="ProgramMenuFolder" Name="Bandeja de Impressoras"
+                Target="[#ExeFile]" WorkingDirectory="INSTALLFOLDER" />
+      <RegistryValue Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run"
+                     Name="BandejaImpressoras" Type="string" Value="&quot;[#ExeFile]&quot;" />
+      <RemoveFolder Id="RemoverPasta" On="uninstall" />
+      <RemoveFolder Id="RemoverPrograms" Directory="ProgramsDir" On="uninstall" />
+    </Component>
+
+    <!-- Fecha o programa antes de atualizar ou desinstalar. -->
+    <util:CloseApplication Id="FecharPrograma" Target="BandejaImpressoras.exe" TerminateProcess="1" RebootPrompt="no" />
+
+    <!-- Abre o programa ao terminar a instalação. -->
+    <CustomAction Id="AbrirPrograma" FileRef="ExeFile" ExeCommand="" Return="asyncNoWait" />
+    <InstallExecuteSequence>
+      <Custom Action="AbrirPrograma" After="InstallFinalize" Condition="NOT REMOVE" />
+    </InstallExecuteSequence>
+
+  </Package>
+</Wix>

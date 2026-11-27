@@ -13,26 +13,29 @@ Programa para Windows 10/11 que fica **só na bandeja do sistema** e abre a fila
 
 ## Instalação
 
-1. Baixe o `BandejaImpressoras-x.y.z.zip` em **[Releases](../../releases)** e extraia.
-2. Dê dois cliques em **`Instalar.cmd`**.
+Baixe o **`BandejaImpressoras-x.y.z.msi`** em **[Releases](../../releases)** e dê dois cliques nele.
 
-Não precisa de administrador nem de runtime: o .NET Framework 4.8 já vem no Windows 10/11. O instalador:
+É um instalador padrão do Windows (Windows Installer). Não precisa de administrador nem de runtime, porque o .NET Framework 4.8 já vem no Windows 10/11. O instalador:
 
-- copia o programa para `%LOCALAPPDATA%\Programs\BandejaImpressoras`;
+- instala o programa para o usuário atual em `%LOCALAPPDATA%\Programs\BandejaImpressoras`;
 - cria um atalho no Menu Iniciar;
-- registra o programa em *Configurações › Aplicativos › Aplicativos instalados*, de onde ele também pode ser desinstalado;
-- ativa "Iniciar com o Windows". Para não ativar, use `Instalar.cmd -SemIniciarComWindows`.
+- ativa "Iniciar com o Windows" (pode ser desligado pelo menu da bandeja);
+- abre o programa ao terminar.
 
-Para atualizar, rode o `Instalar.cmd` da versão nova. Se a mesma versão já estiver instalada, ele não faz nada (use `-Forcar` para reinstalar). Para remover, use *Aplicativos instalados* ou o `Desinstalar.cmd`.
+O programa aparece em *Configurações › Aplicativos › Aplicativos instalados*, de onde é desinstalado. Para atualizar, basta instalar o `.msi` da versão nova: ele fecha o programa e substitui a versão anterior.
 
-## Distribuição interna (sem SmartScreen)
+Instalação silenciosa (para scripts de logon, GPO ou ferramentas de distribuição):
 
-O executável não é assinado. Mesmo assim, o programa **instalado** não dispara o SmartScreen, porque o instalador remove do `.exe` a marca de "baixado da internet". O único aviso possível aparece quando alguém executa o `Instalar.cmd` a partir de um `.zip` baixado. Para evitar até esse aviso:
+```powershell
+msiexec /i BandejaImpressoras-x.y.z.msi /qn
+```
 
-- **Pasta compartilhada:** extraia o `.zip` em um compartilhamento da rede, como `\\servidor\apps\BandejaImpressoras`, e rode o `Instalar.cmd` de lá. Use o nome curto do servidor: endereços com ponto (IP ou FQDN) são tratados como Internet, a menos que você os adicione à zona *Intranet local* por GPO.
-- **Ou** desbloqueie o `.zip` antes de extrair: `Unblock-File .\BandejaImpressoras-x.y.z.zip`.
+## Antivírus e SmartScreen
 
-**Instalação em várias máquinas:** a instalação é por usuário. Configure o `Instalar.cmd` da pasta compartilhada como **script de logon** por GPO (*Configuração do Usuário › Políticas › Configurações do Windows › Scripts › Logon*). Se a versão já estiver instalada, o script termina na hora. Para atualizar todo mundo, basta trocar os arquivos na pasta compartilhada.
+O executável não é assinado digitalmente.
+
+- **SmartScreen:** só avisa sobre arquivos baixados da internet. Para distribuir internamente sem aviso, coloque o `.msi` em uma pasta compartilhada da rede (`\\servidor\apps\...`, usando o nome curto do servidor) ou desbloqueie-o depois de baixar: *Propriedades › Desbloquear*.
+- **Antivírus corporativo:** a primeira versão instalava por scripts PowerShell, e o Advanced Threat Control do Bitdefender bloqueou o PowerShell por "comportamento suspeito" (`ATC.SuspiciousBehavior`). O instalador `.msi` não usa PowerShell. Se uma máquina já registrou o bloqueio, o antivírus pode continuar barrando a gravação em `%LOCALAPPDATA%\Programs\BandejaImpressoras\BandejaImpressoras.exe`, com erro 1310 no instalador. Nesse caso, a TI precisa liberar o caminho ou o arquivo no console do antivírus.
 
 Se o ícone não aparecer, ele está em "ícones ocultos" (a setinha ^ da barra de tarefas). Para deixá-lo sempre visível, ative-o em *Configurações › Personalização › Barra de tarefas › Outros ícones da bandeja do sistema*.
 
@@ -49,19 +52,19 @@ Todo o código está em [`src/BandejaImpressoras/Program.cs`](src/BandejaImpress
 
 ## Compilar
 
-Requer o [.NET SDK](https://dotnet.microsoft.com/download) (6 ou superior).
+Requer o [.NET SDK](https://dotnet.microsoft.com/download) (6 ou superior). O [WiX Toolset 5](https://wixtoolset.org/), que gera o `.msi`, é baixado automaticamente pelo NuGet.
 
 ```powershell
-.\build.ps1 -Versao 1.0.0
+.\build.cmd 1.0.0
 ```
 
-O resultado fica em `dist\BandejaImpressoras-1.0.0.zip`.
+O resultado fica em `dist\BandejaImpressoras-1.0.0.msi`. O instalador está definido em [`installer/Package.wxs`](installer/Package.wxs).
 
 > Se a compilação falhar com "não foi possível copiar ... withSupportedRuntime.config", o caminho da pasta é longo demais (mais de 260 caracteres). Clone o repositório em um caminho mais curto, como `C:\src`.
 
 ## Publicar uma versão
 
-O GitHub Actions compila a cada push. Ao enviar uma tag `v*`, ele também cria a Release com o `.zip`:
+O GitHub Actions compila a cada push. Ao enviar uma tag `v*`, ele também cria a Release com o `.msi`:
 
 ```powershell
 git tag v1.0.1

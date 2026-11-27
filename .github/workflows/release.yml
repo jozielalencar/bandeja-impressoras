@@ -16,20 +16,20 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Compilar e empacotar
-        shell: pwsh
+      - name: Compilar programa e instalador .msi
+        shell: cmd
         run: |
-          $versao = if ('${{ github.ref_type }}' -eq 'tag') { '${{ github.ref_name }}'.TrimStart('v') } else { '0.0.0' }
-          ./build.ps1 -Versao $versao
+          if "${{ github.ref_type }}"=="tag" (set VERSAO=${{ github.ref_name }}) else (set VERSAO=v0.0.0)
+          call build.cmd %VERSAO:~1%
 
       - uses: actions/upload-artifact@v4
         with:
           name: BandejaImpressoras
-          path: dist/*.zip
+          path: dist/*.msi
 
       - name: Publicar release
         if: github.ref_type == 'tag'
-        shell: pwsh
+        shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create '${{ github.ref_name }}' (Get-Item dist/*.zip).FullName --title '${{ github.ref_name }}' --generate-notes
+        run: gh release create "${{ github.ref_name }}" dist/*.msi --title "${{ github.ref_name }}" --generate-notes
