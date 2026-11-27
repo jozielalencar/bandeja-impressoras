@@ -367,26 +367,84 @@ namespace BandejaImpressoras
         }
     }
 
-    /// <summary>Entrada em HKCU\Software\Microsoft\Windows\CurrentVersion\Run.</summary>
+    /// <summary>
+    /// Atalho na pasta Inicializar do usuário (shell:startup).
+    /// Não usa HKCU\...\Run porque o antivírus corporativo bloqueia a gravação nessa chave.
+    /// </summary>
     static class Autostart
     {
-        const string Chave = @"Software\Microsoft\Windows\CurrentVersion\Run";
-        const string Valor = "BandejaImpressoras";
-        static string Comando => "\"" + Application.ExecutablePath + "\"";
+        const string ChaveRun = @"Software\Microsoft\Windows\CurrentVersion\Run";
+        const string ValorRun = "BandejaImpressoras";
 
-        public static bool Ativo()
-        {
-            using (var k = Registry.CurrentUser.OpenSubKey(Chave))
-                return string.Equals(k?.GetValue(Valor) as string, Comando, StringComparison.OrdinalIgnoreCase);
-        }
+        static string Atalho => Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.Startup), "Bandeja de Impressoras.lnk");
+
+        public static bool Ativo() => File.Exists(Atalho) || EntradaRunAntiga();
 
         public static void Definir(bool ativo)
         {
-            using (var k = Registry.CurrentUser.CreateSubKey(Chave))
+            if (ativo)
             {
-                if (ativo) k.SetValue(Valor, Comando);
-                else k.DeleteValue(Valor, false);
+                var link = (IShellLinkW)new ShellLink();
+                link.SetPath(Application.ExecutablePath);
+                link.SetWorkingDirectory(Path.GetDirectoryName(Application.ExecutablePath));
+                link.SetDescription("Bandeja de Impressoras");
+                ((IPersistFile)link).Save(Atalho, true);
             }
+            else
+            {
+                if (File.Exists(Atalho)) File.Delete(Atalho);
+                // Entrada criada por versões antigas; se o antivírus barrar a remoção, o atalho já foi apagado.
+                try
+                {
+                    using (var k = Registry.CurrentUser.OpenSubKey(ChaveRun, true))
+                        k?.DeleteValue(ValorRun, false);
+                }
+                catch (Exception) { }
+            }
+        }
+
+        static bool EntradaRunAntiga()
+        {
+            using (var k = Registry.CurrentUser.OpenSubKey(ChaveRun))
+                return k?.GetValue(ValorRun) != null;
+        }
+
+        [ComImport, Guid("00021401-0000-0000-C000-000000000046")]
+        class ShellLink { }
+
+        [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("000214F9-0000-0000-C000-000000000046")]
+        interface IShellLinkW
+        {
+            void GetPath([Out, MarshalAs(UnmanagedType.LPWStr)] System.Text.StringBuilder pszFile, int cch, IntPtr pfd, uint fFlags);
+            void GetIDList(out IntPtr ppidl);
+            void SetIDList(IntPtr pidl);
+            void GetDescription([Out, MarshalAs(UnmanagedType.LPWStr)] System.Text.StringBuilder pszName, int cch);
+            void SetDescription([MarshalAs(UnmanagedType.LPWStr)] string pszName);
+            void GetWorkingDirectory([Out, MarshalAs(UnmanagedType.LPWStr)] System.Text.StringBuilder pszDir, int cch);
+            void SetWorkingDirectory([MarshalAs(UnmanagedType.LPWStr)] string pszDir);
+            void GetArguments([Out, MarshalAs(UnmanagedType.LPWStr)] System.Text.StringBuilder pszArgs, int cch);
+            void SetArguments([MarshalAs(UnmanagedType.LPWStr)] string pszArgs);
+            void GetHotkey(out short pwHotkey);
+            void SetHotkey(short wHotkey);
+            void GetShowCmd(out int piShowCmd);
+            void SetShowCmd(int iShowCmd);
+            void GetIconLocation([Out, MarshalAs(UnmanagedType.LPWStr)] System.Text.StringBuilder pszIconPath, int cch, out int piIcon);
+            void SetIconLocation([MarshalAs(UnmanagedType.LPWStr)] string pszIconPath, int iIcon);
+            void SetRelativePath([MarshalAs(UnmanagedType.LPWStr)] string pszPathRel, uint dwReserved);
+            void Resolve(IntPtr hwnd, uint fFlags);
+            void SetPath([MarshalAs(UnmanagedType.LPWStr)] string pszFile);
+        }
+
+        [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("0000010b-0000-0000-C000-000000000046")]
+        interface IPersistFile
+        {
+            void GetClassID(out Guid pClassID);
+            [PreserveSig] int IsDirty();
+            void Load([MarshalAs(UnmanagedType.LPWStr)] string pszFileName, uint dwMode);
+            void Save([MarshalAs(UnmanagedType.LPWStr)] string pszFileName, [MarshalAs(UnmanagedType.Bool)] bool fRemember);
+            void SaveCompleted([MarshalAs(UnmanagedType.LPWStr)] string pszFileName);
+            void GetCurFolder([MarshalAs(UnmanagedType.LPWStr)] out string ppszFileName);
         }
     }
 }

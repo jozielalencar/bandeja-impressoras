@@ -35,7 +35,7 @@ msiexec /i BandejaImpressoras-x.y.z.msi /qn
 O executável não é assinado digitalmente.
 
 - **SmartScreen:** só avisa sobre arquivos baixados da internet. Para distribuir internamente sem aviso, coloque o `.msi` em uma pasta compartilhada da rede (`\\servidor\apps\...`, usando o nome curto do servidor) ou desbloqueie-o depois de baixar: *Propriedades › Desbloquear*.
-- **Antivírus corporativo:** a primeira versão instalava por scripts PowerShell, e o Advanced Threat Control do Bitdefender bloqueou o PowerShell por "comportamento suspeito" (`ATC.SuspiciousBehavior`). O instalador `.msi` não usa PowerShell. Se uma máquina já registrou o bloqueio, o antivírus pode continuar barrando a entrada `BandejaImpressoras` em `HKCU\...\Run` que o instalador antigo criou. Nesse caso, "Iniciar com o Windows" mostra um aviso e não liga. Nesse caso, a TI precisa liberar essa entrada no console do antivírus.
+- **Antivírus corporativo:** a primeira versão instalava por scripts PowerShell, e o Advanced Threat Control do Bitdefender bloqueou o PowerShell por "comportamento suspeito" (`ATC.SuspiciousBehavior`). O instalador `.msi` não usa PowerShell. O antivírus também barra a gravação da entrada `BandejaImpressoras` em `HKCU\...\Run`, por isso "Iniciar com o Windows" usa um atalho na pasta Inicializar.
 
 Se o ícone não aparecer, ele está em "ícones ocultos" (a setinha ^ da barra de tarefas). Para deixá-lo sempre visível, ative-o em *Configurações › Personalização › Barra de tarefas › Outros ícones da bandeja do sistema*.
 
@@ -46,7 +46,7 @@ Tudo usa APIs nativas do Windows, sem software de terceiros:
 - **Listagem:** `EnumPrinters` (winspool.drv), nível 4, com impressoras locais e conexões de rede. O nível 4 só lê o registro, então não trava quando uma impressora de rede está desligada.
 - **Fila:** `rundll32 printui.dll,PrintUIEntry /o /n "<impressora>"` abre a janela nativa "Ver o que está sendo impresso".
 - **Configuração:** `%APPDATA%\BandejaImpressoras\config.json`.
-- **Iniciar com o Windows:** valor `BandejaImpressoras` em `HKCU\Software\Microsoft\Windows\CurrentVersion\Run`.
+- **Iniciar com o Windows:** atalho `Bandeja de Impressoras.lnk` na pasta Inicializar do usuário (`shell:startup`). O desinstalador apaga esse atalho.
 
 Todo o código está em [`src/BandejaImpressoras/Program.cs`](src/BandejaImpressoras/Program.cs).
 
