@@ -23,9 +23,16 @@ Não precisa de administrador nem de runtime: o .NET Framework 4.8 já vem no Wi
 - registra o programa em *Configurações › Aplicativos › Aplicativos instalados*, de onde ele também pode ser desinstalado;
 - ativa "Iniciar com o Windows". Para não ativar, use `Instalar.cmd -SemIniciarComWindows`.
 
-Para atualizar, rode o `Instalar.cmd` da versão nova. Para remover, use *Aplicativos instalados* ou o `Desinstalar.cmd`.
+Para atualizar, rode o `Instalar.cmd` da versão nova. Se a mesma versão já estiver instalada, ele não faz nada (use `-Forcar` para reinstalar). Para remover, use *Aplicativos instalados* ou o `Desinstalar.cmd`.
 
-> O executável não é assinado digitalmente. Na primeira execução, o Windows SmartScreen pode avisar: clique em *Mais informações › Executar assim mesmo*.
+## Distribuição interna (sem SmartScreen)
+
+O executável não é assinado. Mesmo assim, o programa **instalado** não dispara o SmartScreen, porque o instalador remove do `.exe` a marca de "baixado da internet". O único aviso possível aparece quando alguém executa o `Instalar.cmd` a partir de um `.zip` baixado. Para evitar até esse aviso:
+
+- **Pasta compartilhada:** extraia o `.zip` em um compartilhamento da rede, como `\\servidor\apps\BandejaImpressoras`, e rode o `Instalar.cmd` de lá. Use o nome curto do servidor: endereços com ponto (IP ou FQDN) são tratados como Internet, a menos que você os adicione à zona *Intranet local* por GPO.
+- **Ou** desbloqueie o `.zip` antes de extrair: `Unblock-File .\BandejaImpressoras-x.y.z.zip`.
+
+**Instalação em várias máquinas:** a instalação é por usuário. Configure o `Instalar.cmd` da pasta compartilhada como **script de logon** por GPO (*Configuração do Usuário › Políticas › Configurações do Windows › Scripts › Logon*). Se a versão já estiver instalada, o script termina na hora. Para atualizar todo mundo, basta trocar os arquivos na pasta compartilhada.
 
 Se o ícone não aparecer, ele está em "ícones ocultos" (a setinha ^ da barra de tarefas). Para deixá-lo sempre visível, ative-o em *Configurações › Personalização › Barra de tarefas › Outros ícones da bandeja do sistema*.
 

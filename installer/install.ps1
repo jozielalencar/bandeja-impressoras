@@ -3,7 +3,8 @@
 #   - cria atalho no Menu Iniciar
 #   - registra em "Configuracoes > Aplicativos" (para desinstalar por la)
 #   - ativa "Iniciar com o Windows" (pode ser desligado pelo menu da bandeja)
-param([switch]$SemIniciarComWindows)
+# Se a mesma versao ja estiver instalada, nao faz nada (permite usar como script de logon).
+param([switch]$SemIniciarComWindows, [switch]$Forcar)
 
 $ErrorActionPreference = 'Stop'
 $app  = 'BandejaImpressoras'
@@ -13,6 +14,12 @@ $exe  = Join-Path $dest "$app.exe"
 
 $origem = Join-Path $PSScriptRoot "$app.exe"
 if (-not (Test-Path $origem)) { throw "Arquivo nao encontrado: $origem" }
+
+if (-not $Forcar -and (Test-Path $exe) -and
+    (Get-Item $exe).VersionInfo.FileVersion -eq (Get-Item $origem).VersionInfo.FileVersion) {
+    Write-Host "$nome ja esta instalado nesta versao."
+    exit 0
+}
 
 # Fecha a versao em execucao (atualizacao).
 Get-Process $app -ErrorAction SilentlyContinue | Stop-Process -Force
