@@ -1,11 +1,11 @@
 # Bandeja de Impressoras
 
-Programa para Windows 10/11 que fica **só na bandeja do sistema** e abre a fila de impressão de qualquer impressora com dois cliques.
+Programa para Windows 10/11 que fica **só na bandeja do sistema** e abre a fila de impressão da sua impressora com um clique.
 
 | Ação | O que acontece |
 |---|---|
-| **Clique esquerdo** no ícone | Lista todas as impressoras instaladas. Ao escolher uma, abre a **fila de trabalhos** dela e ela passa a ser a padrão (marcada em negrito). |
-| **Clique direito** no ícone | Abrir a fila da padrão · **Trocar impressora padrão** · **Iniciar com o Windows** · Sair |
+| **Clique esquerdo** no ícone | Abre direto a **fila de trabalhos** da impressora padrão. |
+| **Clique direito** no ícone | Abrir a fila da padrão · **Trocar impressora padrão** (lista todas as impressoras instaladas) · **Iniciar com o Windows** · Sair |
 | **Primeira execução** | Pergunta qual impressora será a padrão e salva a escolha. |
 | **Impressora salva sumiu** | Avisa e pede outra; o programa continua funcionando mesmo se você cancelar. |
 
@@ -17,10 +17,11 @@ Baixe o **`BandejaImpressoras-x.y.z.msi`** em **[Releases](../../releases)** e d
 
 É um instalador padrão do Windows (Windows Installer). Não precisa de administrador nem de runtime, porque o .NET Framework 4.8 já vem no Windows 10/11. O instalador:
 
-- instala o programa para o usuário atual em `%LOCALAPPDATA%\Programs\BandejaImpressoras`;
+- instala o programa em `C:\Atlas\bandeja-impressoras`, criando a pasta se ela não existir;
 - cria um atalho no Menu Iniciar;
-- ativa "Iniciar com o Windows" (pode ser desligado pelo menu da bandeja);
 - abre o programa ao terminar.
+
+"Iniciar com o Windows" fica desligado depois de instalar. Ligue pelo menu do clique direito.
 
 O programa aparece em *Configurações › Aplicativos › Aplicativos instalados*, de onde é desinstalado. Para atualizar, basta instalar o `.msi` da versão nova: ele fecha o programa e substitui a versão anterior.
 
@@ -35,7 +36,7 @@ msiexec /i BandejaImpressoras-x.y.z.msi /qn
 O executável não é assinado digitalmente.
 
 - **SmartScreen:** só avisa sobre arquivos baixados da internet. Para distribuir internamente sem aviso, coloque o `.msi` em uma pasta compartilhada da rede (`\\servidor\apps\...`, usando o nome curto do servidor) ou desbloqueie-o depois de baixar: *Propriedades › Desbloquear*.
-- **Antivírus corporativo:** a primeira versão instalava por scripts PowerShell, e o Advanced Threat Control do Bitdefender bloqueou o PowerShell por "comportamento suspeito" (`ATC.SuspiciousBehavior`). O instalador `.msi` não usa PowerShell. Se uma máquina já registrou o bloqueio, o antivírus pode continuar barrando a gravação em `%LOCALAPPDATA%\Programs\BandejaImpressoras\BandejaImpressoras.exe`, com erro 1310 no instalador. Nesse caso, a TI precisa liberar o caminho ou o arquivo no console do antivírus.
+- **Antivírus corporativo:** a primeira versão instalava por scripts PowerShell, e o Advanced Threat Control do Bitdefender bloqueou o PowerShell por "comportamento suspeito" (`ATC.SuspiciousBehavior`). O instalador `.msi` não usa PowerShell. Se uma máquina já registrou o bloqueio, o antivírus pode continuar barrando o que o instalador antigo criou: a entrada `BandejaImpressoras` em `HKCU\...\Run` ("Iniciar com o Windows" mostra um aviso e não liga) e o atalho "Bandeja de Impressoras.lnk" do Menu Iniciar (aviso 1909 no instalador, que mesmo assim termina). Nesse caso, a TI precisa liberar esses itens no console do antivírus.
 
 Se o ícone não aparecer, ele está em "ícones ocultos" (a setinha ^ da barra de tarefas). Para deixá-lo sempre visível, ative-o em *Configurações › Personalização › Barra de tarefas › Outros ícones da bandeja do sistema*.
 

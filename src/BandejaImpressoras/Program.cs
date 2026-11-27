@@ -1,5 +1,5 @@
 // Bandeja de Impressoras — ícone na bandeja do sistema para abrir a fila de impressão.
-// Clique esquerdo: lista as impressoras; escolher uma abre a fila dela e a torna a padrão.
+// Clique esquerdo: abre a fila de impressão da impressora padrão.
 // Clique direito: trocar a impressora padrão, iniciar com o Windows, sair.
 
 using System;
@@ -30,6 +30,13 @@ namespace BandejaImpressoras
                 if (!primeiraInstancia) return;
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
+
+                // Qualquer erro inesperado vira um aviso simples, sem derrubar o programa.
+                Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException);
+                Application.ThreadException += (s, e) =>
+                    MessageBox.Show("Ocorreu um erro:\n" + e.Exception.Message, "Bandeja de Impressoras",
+                                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+
                 Application.Run(new TrayApp());
             }
         }
@@ -38,10 +45,10 @@ namespace BandejaImpressoras
     class TrayApp : ApplicationContext
     {
         readonly NotifyIcon icone;
-        readonly ContextMenuStrip menuEsquerdo = new ContextMenuStrip();
         readonly ContextMenuStrip menuDireito = new ContextMenuStrip();
         readonly Config config = Config.Carregar();
         bool dialogoAberto;
+        DateTime ultimaAbertura;
 
         public TrayApp()
         {
@@ -51,7 +58,7 @@ namespace BandejaImpressoras
                 ContextMenuStrip = menuDireito,
                 Visible = true,
             };
-            icone.MouseUp += (s, e) => { if (e.Button == MouseButtons.Left) MostrarMenuEsquerdo(); };
+            icone.MouseUp += (s, e) => { if (e.Button == MouseButtons.Left) AbrirFilaPadrao(); };
             menuDireito.Opening += (s, e) => { MontarMenuDireito(); e.Cancel = false; };
             AtualizarDica();
 
@@ -61,33 +68,31 @@ namespace BandejaImpressoras
             timer.Start();
         }
 
-        // ---------- Menus ----------
+        // ---------- Clique esquerdo ----------
 
-        void MostrarMenuEsquerdo()
+        void AbrirFilaPadrao()
         {
+            // Um duplo clique gera dois cliques: abre a fila uma vez só.
+            if ((DateTime.Now - ultimaAbertura).TotalSeconds < 1) return;
+            ultimaAbertura = DateTime.Now;
+
             var impressoras = Spooler.ListarImpressoras();
-            menuEsquerdo.Items.Clear();
-
-            if (config.ImpressoraPadrao != null && !Contem(impressoras, config.ImpressoraPadrao))
-                menuEsquerdo.Items.Add(new ToolStripMenuItem($"\"{config.ImpressoraPadrao}\" não encontrada — escolha outra:") { Enabled = false });
-
             if (impressoras.Count == 0)
-                menuEsquerdo.Items.Add(new ToolStripMenuItem("Nenhuma impressora instalada") { Enabled = false });
-
-            foreach (var nome in impressoras)
             {
-                var item = ItemImpressora(nome);
-                item.Click += (s, e) => { DefinirPadrao(nome); AbrirFila(nome); };
-                menuEsquerdo.Items.Add(item);
+                icone.ShowBalloonTip(5000, "Bandeja de Impressoras", "Nenhuma impressora instalada.", ToolTipIcon.Warning);
+                return;
             }
 
-            // O NotifyIcon só sabe exibir o menu associado a ele na posição correta (e fechá-lo ao
-            // clicar fora). Troca o menu temporariamente e chama o método interno que o exibe.
-            icone.ContextMenuStrip = menuEsquerdo;
-            typeof(NotifyIcon).GetMethod("ShowContextMenu", BindingFlags.Instance | BindingFlags.NonPublic)
-                ?.Invoke(icone, null);
-            icone.ContextMenuStrip = menuDireito;
+            // Sem padrão válida: pede uma e só então abre a fila.
+            if (!Contem(impressoras, config.ImpressoraPadrao))
+            {
+                EscolherPadrao(impressoras, MensagemEscolha());
+                if (!Contem(impressoras, config.ImpressoraPadrao)) return;
+            }
+            AbrirFila(config.ImpressoraPadrao);
         }
+
+        // ---------- Clique direito ----------
 
         void MontarMenuDireito()
         {
@@ -118,7 +123,16 @@ namespace BandejaImpressoras
             menuDireito.Items.Add(new ToolStripSeparator());
 
             var iniciar = new ToolStripMenuItem("Iniciar com o Windows") { Checked = Autostart.Ativo() };
-            iniciar.Click += (s, e) => Autostart.Definir(!iniciar.Checked);
+            iniciar.Click += (s, e) =>
+            {
+                try { Autostart.Definir(!iniciar.Checked); }
+                catch (Exception ex)
+                {
+                    icone.ShowBalloonTip(8000, "Iniciar com o Windows",
+                        "Não foi possível alterar a inicialização automática: " + ex.Message +
+                        " Um antivírus pode estar bloqueando a alteração.", ToolTipIcon.Warning);
+                }
+            };
             menuDireito.Items.Add(iniciar);
 
             menuDireito.Items.Add(new ToolStripSeparator());
@@ -147,11 +161,13 @@ namespace BandejaImpressoras
                 return;
             }
 
-            if (config.ImpressoraPadrao == null)
-                EscolherPadrao(impressoras, "Escolha a impressora padrão:");
-            else if (!Contem(impressoras, config.ImpressoraPadrao))
-                EscolherPadrao(impressoras, $"A impressora \"{config.ImpressoraPadrao}\" não foi encontrada.\nEscolha outra impressora padrão:");
+            if (!Contem(impressoras, config.ImpressoraPadrao))
+                EscolherPadrao(impressoras, MensagemEscolha());
         }
+
+        string MensagemEscolha() => config.ImpressoraPadrao == null
+            ? "Escolha a impressora padrão:"
+            : $"A impressora \"{config.ImpressoraPadrao}\" não foi encontrada.\nEscolha outra impressora padrão:";
 
         void EscolherPadrao(List<string> impressoras, string mensagem)
         {
@@ -210,7 +226,7 @@ namespace BandejaImpressoras
 
         protected override void Dispose(bool disposing)
         {
-            if (disposing) { icone.Dispose(); menuEsquerdo.Dispose(); menuDireito.Dispose(); }
+            if (disposing) { icone.Dispose(); menuDireito.Dispose(); }
             base.Dispose(disposing);
         }
     }

@@ -1,9 +1,9 @@
 <!--
   Instalador por usuário (não precisa de administrador):
-    - programa em %LOCALAPPDATA%\Programs\BandejaImpressoras
+    - programa em C:\Atlas\bandeja-impressoras (a pasta é criada se não existir)
     - atalho no Menu Iniciar
-    - "Iniciar com o Windows" ativado (HKCU\...\Run; pode ser desligado pelo menu da bandeja)
     - aparece em Configurações > Aplicativos, de onde é desinstalado
+  "Iniciar com o Windows" é ligado pelo menu da bandeja (o instalador não mexe nisso).
 -->
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs"
      xmlns:util="http://wixtoolset.org/schemas/v4/wxs/util">
@@ -24,21 +24,17 @@
     <Property Id="ARPNOMODIFY" Value="1" />
     <Property Id="ARPNOREPAIR" Value="1" />
 
-    <StandardDirectory Id="LocalAppDataFolder">
-      <Directory Id="ProgramsDir" Name="Programs">
-        <Directory Id="INSTALLFOLDER" Name="BandejaImpressoras" />
-      </Directory>
+    <StandardDirectory Id="TARGETDIR">
+      <Directory Id="INSTALLFOLDER" Name="bandeja-impressoras" />
     </StandardDirectory>
+    <SetDirectory Id="INSTALLFOLDER" Value="C:\Atlas\bandeja-impressoras\" Sequence="both" />
 
     <Component Id="Programa" Directory="INSTALLFOLDER" Guid="1F1837A6-7349-A866-3529-3A1D7ECF0206">
       <File Id="ExeFile" Source="$(var.BandejaImpressoras.TargetPath)" KeyPath="no" />
       <RegistryValue Root="HKCU" Key="Software\BandejaImpressoras" Name="Instalado" Type="integer" Value="1" KeyPath="yes" />
       <Shortcut Id="Atalho" Directory="ProgramMenuFolder" Name="Bandeja de Impressoras"
                 Target="[#ExeFile]" WorkingDirectory="INSTALLFOLDER" />
-      <RegistryValue Root="HKCU" Key="Software\Microsoft\Windows\CurrentVersion\Run"
-                     Name="BandejaImpressoras" Type="string" Value="&quot;[#ExeFile]&quot;" />
       <RemoveFolder Id="RemoverPasta" On="uninstall" />
-      <RemoveFolder Id="RemoverPrograms" Directory="ProgramsDir" On="uninstall" />
     </Component>
 
     <!-- Fecha o programa antes de atualizar ou desinstalar. -->
