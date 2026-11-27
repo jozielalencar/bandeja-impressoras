@@ -18,7 +18,6 @@ Baixe o **`BandejaImpressoras-x.y.z.msi`** em **[Releases](../../releases)** e d
 É um instalador padrão do Windows (Windows Installer). Não precisa de administrador nem de runtime, porque o .NET Framework 4.8 já vem no Windows 10/11. O instalador:
 
 - instala o programa em `C:\Atlas\bandeja-impressoras`, criando a pasta se ela não existir;
-- cria um atalho no Menu Iniciar;
 - abre o programa ao terminar.
 
 "Iniciar com o Windows" fica desligado depois de instalar. Ligue pelo menu do clique direito.
@@ -36,7 +35,7 @@ msiexec /i BandejaImpressoras-x.y.z.msi /qn
 O executável não é assinado digitalmente.
 
 - **SmartScreen:** só avisa sobre arquivos baixados da internet. Para distribuir internamente sem aviso, coloque o `.msi` em uma pasta compartilhada da rede (`\\servidor\apps\...`, usando o nome curto do servidor) ou desbloqueie-o depois de baixar: *Propriedades › Desbloquear*.
-- **Antivírus corporativo:** a primeira versão instalava por scripts PowerShell, e o Advanced Threat Control do Bitdefender bloqueou o PowerShell por "comportamento suspeito" (`ATC.SuspiciousBehavior`). O instalador `.msi` não usa PowerShell. Se uma máquina já registrou o bloqueio, o antivírus pode continuar barrando o que o instalador antigo criou: a entrada `BandejaImpressoras` em `HKCU\...\Run` ("Iniciar com o Windows" mostra um aviso e não liga) e o atalho "Bandeja de Impressoras.lnk" do Menu Iniciar (aviso 1909 no instalador, que mesmo assim termina). Nesse caso, a TI precisa liberar esses itens no console do antivírus.
+- **Antivírus corporativo:** a primeira versão instalava por scripts PowerShell, e o Advanced Threat Control do Bitdefender bloqueou o PowerShell por "comportamento suspeito" (`ATC.SuspiciousBehavior`). O instalador `.msi` não usa PowerShell. Se uma máquina já registrou o bloqueio, o antivírus pode continuar barrando a entrada `BandejaImpressoras` em `HKCU\...\Run` que o instalador antigo criou. Nesse caso, "Iniciar com o Windows" mostra um aviso e não liga. Nesse caso, a TI precisa liberar essa entrada no console do antivírus.
 
 Se o ícone não aparecer, ele está em "ícones ocultos" (a setinha ^ da barra de tarefas). Para deixá-lo sempre visível, ative-o em *Configurações › Personalização › Barra de tarefas › Outros ícones da bandeja do sistema*.
 

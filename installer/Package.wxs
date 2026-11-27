@@ -1,7 +1,6 @@
 <!--
   Instalador por usuário (não precisa de administrador):
     - programa em C:\Atlas\bandeja-impressoras (a pasta é criada se não existir)
-    - atalho no Menu Iniciar
     - aparece em Configurações > Aplicativos, de onde é desinstalado
   "Iniciar com o Windows" é ligado pelo menu da bandeja (o instalador não mexe nisso).
 -->
@@ -32,8 +31,6 @@
     <Component Id="Programa" Directory="INSTALLFOLDER" Guid="1F1837A6-7349-A866-3529-3A1D7ECF0206">
       <File Id="ExeFile" Source="$(var.BandejaImpressoras.TargetPath)" KeyPath="no" />
       <RegistryValue Root="HKCU" Key="Software\BandejaImpressoras" Name="Instalado" Type="integer" Value="1" KeyPath="yes" />
-      <Shortcut Id="Atalho" Directory="ProgramMenuFolder" Name="Bandeja de Impressoras"
-                Target="[#ExeFile]" WorkingDirectory="INSTALLFOLDER" />
       <RemoveFolder Id="RemoverPasta" On="uninstall" />
     </Component>
 
