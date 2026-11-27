@@ -2,6 +2,7 @@
   Instalador por usuário (não precisa de administrador):
     - programa em C:\Atlas\bandeja-impressoras (a pasta é criada se não existir)
     - aparece em Configurações > Aplicativos, de onde é desinstalado
+    - remove a impressora virtual "OneNote (Desktop)", se existir
   "Iniciar com o Windows" é ligado pelo menu da bandeja (atalho na pasta Inicializar);
   o desinstalador apaga esse atalho.
 -->
@@ -40,10 +41,14 @@
     <!-- Fecha o programa antes de atualizar ou desinstalar. -->
     <util:CloseApplication Id="FecharPrograma" Target="BandejaImpressoras.exe" TerminateProcess="1" RebootPrompt="no" />
 
+    <!-- Remove a impressora "OneNote (Desktop)". Se falhar (ex.: sem permissão), a instalação segue. -->
+    <CustomAction Id="RemoverOneNote" FileRef="ExeFile" ExeCommand="/remover-onenote" Return="ignore" />
+
     <!-- Abre o programa ao terminar a instalação. -->
     <CustomAction Id="AbrirPrograma" FileRef="ExeFile" ExeCommand="" Return="asyncNoWait" />
     <InstallExecuteSequence>
-      <Custom Action="AbrirPrograma" After="InstallFinalize" Condition="NOT REMOVE" />
+      <Custom Action="RemoverOneNote" After="InstallFinalize" Condition="NOT REMOVE" />
+      <Custom Action="AbrirPrograma" After="RemoverOneNote" Condition="NOT REMOVE" />
     </InstallExecuteSequence>
 
   </Package>

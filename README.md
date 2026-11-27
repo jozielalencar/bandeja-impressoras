@@ -8,6 +8,7 @@ Programa para Windows 10/11 que fica **só na bandeja do sistema** e abre a fila
 | **Clique direito** no ícone | Abrir a fila da padrão · **Trocar impressora padrão** (lista todas as impressoras instaladas) · **Iniciar com o Windows** · Sair |
 | **Primeira execução** | Pergunta qual impressora será a padrão e salva a escolha. |
 | **Impressora salva sumiu** | Avisa e pede outra; o programa continua funcionando mesmo se você cancelar. |
+| **Toda vez que o programa abre** | Remove a impressora virtual **OneNote (Desktop)**, se ela estiver instalada. Com "Iniciar com o Windows" ligado, isso acontece a cada logon. |
 
 > A "impressora padrão" aqui é a preferência do programa. A impressora padrão do Windows não é alterada.
 
@@ -18,6 +19,7 @@ Baixe o **`BandejaImpressoras-x.y.z.msi`** em **[Releases](../../releases)** e d
 É um instalador padrão do Windows (Windows Installer). Não precisa de administrador nem de runtime, porque o .NET Framework 4.8 já vem no Windows 10/11. O instalador:
 
 - instala o programa em `C:\Atlas\bandeja-impressoras`, criando a pasta se ela não existir;
+- remove a impressora virtual **OneNote (Desktop)**, se ela existir (se faltar permissão, a instalação continua e a impressora fica);
 - abre o programa ao terminar.
 
 "Iniciar com o Windows" fica desligado depois de instalar. Ligue pelo menu do clique direito.

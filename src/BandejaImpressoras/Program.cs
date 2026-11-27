@@ -22,12 +22,16 @@ namespace BandejaImpressoras
     static class Program
     {
         [STAThread]
-        static void Main()
+        static int Main(string[] args)
         {
+            // Chamado pelo instalador: remove a impressora virtual do OneNote e sai, sem abrir a bandeja.
+            if (args.Any(a => string.Equals(a, "/remover-onenote", StringComparison.OrdinalIgnoreCase)))
+                return Spooler.RemoverImpressora(Spooler.ImpressoraOneNote);
+
             // Apenas uma instância por usuário.
             using (var mutex = new Mutex(true, @"Local\BandejaImpressoras", out bool primeiraInstancia))
             {
-                if (!primeiraInstancia) return;
+                if (!primeiraInstancia) return 0;
                 Application.EnableVisualStyles();
                 Application.SetCompatibleTextRenderingDefault(false);
 
@@ -37,8 +41,13 @@ namespace BandejaImpressoras
                     MessageBox.Show("Ocorreu um erro:\n" + e.Exception.Message, "Bandeja de Impressoras",
                                     MessageBoxButtons.OK, MessageBoxIcon.Warning);
 
+                // A cada início (inclusive no logon), remove a impressora do OneNote se ela tiver
+                // voltado (ex.: reparo do Office). Em segundo plano, para não atrasar o ícone.
+                ThreadPool.QueueUserWorkItem(_ => Spooler.RemoverImpressora(Spooler.ImpressoraOneNote));
+
                 Application.Run(new TrayApp());
             }
+            return 0;
         }
     }
 
@@ -326,6 +335,45 @@ namespace BandejaImpressoras
             }
             return nomes.Distinct(StringComparer.OrdinalIgnoreCase)
                         .OrderBy(n => n, StringComparer.CurrentCultureIgnoreCase).ToList();
+        }
+
+        /// <summary>Impressora virtual "Enviar para o OneNote" que o Office instala.</summary>
+        public const string ImpressoraOneNote = "OneNote (Desktop)";
+
+        const int PRINTER_ALL_ACCESS = 0x000F000C;
+        const int ERROR_INVALID_PRINTER_NAME = 1801;
+
+        [StructLayout(LayoutKind.Sequential)]
+        struct PRINTER_DEFAULTS
+        {
+            public IntPtr pDatatype;
+            public IntPtr pDevMode;
+            public int DesiredAccess;
+        }
+
+        [DllImport("winspool.drv", CharSet = CharSet.Unicode, SetLastError = true)]
+        static extern bool OpenPrinter(string pPrinterName, out IntPtr phPrinter, ref PRINTER_DEFAULTS pDefault);
+
+        [DllImport("winspool.drv", SetLastError = true)]
+        static extern bool DeletePrinter(IntPtr hPrinter);
+
+        [DllImport("winspool.drv", SetLastError = true)]
+        static extern bool ClosePrinter(IntPtr hPrinter);
+
+        /// <summary>
+        /// Remove uma impressora local. Devolve 0 se ela foi removida ou não existe;
+        /// senão, o código de erro do Windows (ex.: 5 = acesso negado).
+        /// </summary>
+        public static int RemoverImpressora(string nome)
+        {
+            var acesso = new PRINTER_DEFAULTS { DesiredAccess = PRINTER_ALL_ACCESS };
+            if (!OpenPrinter(nome, out IntPtr h, ref acesso))
+            {
+                int erro = Marshal.GetLastWin32Error();
+                return erro == ERROR_INVALID_PRINTER_NAME ? 0 : erro;
+            }
+            try { return DeletePrinter(h) ? 0 : Marshal.GetLastWin32Error(); }
+            finally { ClosePrinter(h); }
         }
     }
 
